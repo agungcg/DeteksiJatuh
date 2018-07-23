@@ -32,10 +32,10 @@ import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
-    public static Handler myHandler = new Handler();
     private static final int PICK_CONTACT = 1;
     private boolean isSensorOn;
     private String stringNumber, stringName, stringMsg = "Inna lillahi wa inna ilaihi raji'un saudara anda telah terjatuh, mohon diberikan pertolangan secepatnya.";
+    private long pattern[]={0,300,200,300,500};
 
     private SensorManager sensorManager;
     private Sensor gyroscope;
@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     boolean statusTH2 = false;
     boolean statusTH3 = false;
     boolean statusFall = false;
+    boolean statusNotif = false;
 
     //----------------------------------------------------------------------------------------------
 
@@ -141,6 +142,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             statusTH2 = false;
             statusTH3 = false;
             statusFall = false;
+            statusNotif = false;
 
             startWt = SystemClock.uptimeMillis();
 
@@ -310,6 +312,77 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
             }
 
+            if (statusNotif){
+
+                sensorManager.unregisterListener(MainActivity.this);
+
+                startWt = 0L;
+                wtInMiliseconds = 0L;
+                wtSwapBuff = 0L;
+                updateWt = 0L;
+
+                wtPublic.clear();
+                wxPublic.clear();
+                wyPublic.clear();
+                wzPublic.clear();
+                wresPublic.clear();
+                iMax.clear();
+                wtMax.clear();
+                wresMax.clear();
+
+                AlertDialog dialog = new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Jatuh Terdeteksi")
+                        .setMessage("Apakah Anda Baik-Baik Saja?")
+                        .setPositiveButton(Html.fromHtml("<font>Ya</font>"), new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                isSensorOn = false;
+                                vibe.cancel();
+                                turnOnSensor();
+                            }
+                        })
+                        .setNegativeButton(Html.fromHtml("<font>Tidak</font>"), new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialogInterface, int i) {
+                                //SmsManager.getDefault().sendTextMessage(stringNumber, null, stringMsg, null,null);
+                                Toast.makeText(MainActivity.this, "Pesan Terkirim", Toast.LENGTH_LONG).show();
+                                vibe.cancel();
+                                turnOffSensor();
+                            }
+                        })
+                        .setCancelable(false)
+                        .create();
+
+                dialog.setOnShowListener(new DialogInterface.OnShowListener() {
+                    private static final int AUTO_DISMISS_MILLIS = 6000;
+                    @Override
+                    public void onShow(final DialogInterface dialog) {
+                        final Button defaultButton = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_NEGATIVE);
+                        final CharSequence positiveButtonText = defaultButton.getText();
+                        new CountDownTimer(AUTO_DISMISS_MILLIS, 100) {
+                            @Override
+                            public void onTick(long millisUntilFinished) {
+                                defaultButton.setText(String.format(Locale.getDefault(), "%s (%d)",positiveButtonText, TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished) + 1 //add one so it never displays zero
+                                ));
+
+                            }
+                            @Override
+                            public void onFinish() {
+                                if (((AlertDialog) dialog).isShowing()) {
+                                    //SmsManager.getDefault().sendTextMessage(stringNumber, null, stringMsg, null,null);
+                                    Toast.makeText(MainActivity.this, "Pesan Terkirim", Toast.LENGTH_LONG).show();
+                                    vibe.cancel();
+                                    turnOffSensor();
+                                    dialog.dismiss();
+                                }
+                            }
+                        }.start();
+                    }
+                });
+                dialog.show();
+                vibe.vibrate(pattern,0);
+            }
+
         }
 
     }
@@ -350,77 +423,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
                 if (tempAres > TH2){
                     statusTH2 = true;
+                }else {
+                    statusTH2 = false;
                 }
 
                 if (tempTres > TH3){
                     statusTH3 = true;
+                }else {
+                    statusTH3 = false;
                 }
 
                 if (statusTH2 && statusTH3){
-                    sensorManager.unregisterListener(MainActivity.this);
-
                     statusFall = true;
-                    isSensorOn = false;
-
-                    startWt = 0L;
-                    wtInMiliseconds = 0L;
-                    wtSwapBuff = 0L;
-                    updateWt = 0L;
-
-                    wtPublic.clear();
-                    wxPublic.clear();
-                    wyPublic.clear();
-                    wzPublic.clear();
-                    wresPublic.clear();
-                    iMax.clear();
-                    wtMax.clear();
-                    wresMax.clear();
-
-                    toggleButtonImage();
-
-                    AlertDialog dialog = new AlertDialog.Builder(MainActivity.this)
-                            .setTitle("Jatuh Terdeteksi")
-                            .setMessage("Apakah Anda Baik-Baik Saja?")
-                            .setPositiveButton(Html.fromHtml("<font>Ya</font>"), null)
-                            .setNegativeButton(Html.fromHtml("<font>Tidak</font>"), new DialogInterface.OnClickListener() {
-                                @Override
-                                public void onClick(DialogInterface dialogInterface, int i) {
-                                    //SmsManager.getDefault().sendTextMessage(stringNumber, null, stringMsg, null,null);
-                                    Toast.makeText(MainActivity.this, "Pesan Terkirim", Toast.LENGTH_LONG).show();
-                                }
-                            })
-                            .setCancelable(false)
-                            .create();
-
-                    dialog.setOnShowListener(new DialogInterface.OnShowListener() {
-                        private static final int AUTO_DISMISS_MILLIS = 6000;
-                        @Override
-                        public void onShow(final DialogInterface dialog) {
-                            final Button defaultButton = ((AlertDialog) dialog).getButton(AlertDialog.BUTTON_NEGATIVE);
-                            final CharSequence positiveButtonText = defaultButton.getText();
-                            new CountDownTimer(AUTO_DISMISS_MILLIS, 100) {
-                                @Override
-                                public void onTick(long millisUntilFinished) {
-                                    defaultButton.setText(String.format(Locale.getDefault(), "%s (%d)",positiveButtonText, TimeUnit.MILLISECONDS.toSeconds(millisUntilFinished) + 1 //add one so it never displays zero
-                                    ));
-                                }
-                                @Override
-                                public void onFinish() {
-                                    if (((AlertDialog) dialog).isShowing()) {
-                                        //SmsManager.getDefault().sendTextMessage(stringNumber, null, stringMsg, null,null);
-                                        Toast.makeText(MainActivity.this, "Pesan Terkirim", Toast.LENGTH_LONG).show();
-
-                                        dialog.dismiss();
-                                    }
-                                }
-                            }.start();
-                        }
-                    });
-                    dialog.show();
+                    statusNotif = true;
                 }else{
-                    statusTH1 = false;
-                    statusTH2 = false;
-                    statusTH3 = false;
                     statusFall = false;
                 }
 
