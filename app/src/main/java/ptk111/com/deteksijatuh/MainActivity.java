@@ -344,7 +344,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                         .setNegativeButton(Html.fromHtml("<font>Tidak</font>"), new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialogInterface, int i) {
-                                //SmsManager.getDefault().sendTextMessage(stringNumber, null, stringMsg, null,null);
+                                SmsManager.getDefault().sendTextMessage(stringNumber, null, stringMsg, null,null);
                                 Toast.makeText(MainActivity.this, "Pesan Terkirim", Toast.LENGTH_LONG).show();
                                 vibe.cancel();
                                 turnOffSensor();
@@ -369,7 +369,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                             @Override
                             public void onFinish() {
                                 if (((AlertDialog) dialog).isShowing()) {
-                                    //SmsManager.getDefault().sendTextMessage(stringNumber, null, stringMsg, null,null);
+                                    SmsManager.getDefault().sendTextMessage(stringNumber, null, stringMsg, null,null);
                                     Toast.makeText(MainActivity.this, "Pesan Terkirim", Toast.LENGTH_LONG).show();
                                     vibe.cancel();
                                     turnOffSensor();
